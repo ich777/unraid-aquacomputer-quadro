@@ -1,0 +1,140 @@
+<?xml version='1.0' standalone='yes'?>
+<!DOCTYPE PLUGIN [
+  <!ENTITY name      "aquacomputer-quadro-hwmon">
+  <!ENTITY author    "ich777">
+  <!ENTITY version   "2022.07.26">
+  <!ENTITY gitURL    "https://raw.githubusercontent.com/&author;/unraid-aquacomputer-quadro/master">
+  <!ENTITY pluginURL "&gitURL;/&name;.plg">
+  <!ENTITY plugin    "/boot/config/plugins/&name;">
+  <!ENTITY emhttp    "/usr/local/emhttp/plugins/&name;">
+  <!ENTITY packages  "/boot/config/plugins/&name;/packages">
+]>
+
+<PLUGIN  name="&name;" author="&author;" version="&version;" pluginURL="&pluginURL;" min="6.11.0-rc1">
+
+<CHANGES>
+
+###2022.07.26
+- Initial release
+
+</CHANGES>
+
+<FILE Name="&emhttp;/README.md">
+<INLINE>
+**Aquacomputer Quadro hwmon**
+
+This package contains a hwmon Linux kernel driver for exposing sensors of the Aquacomputer Quadro fan controller. You can get more details here: https://github.com/leoratte/aquacomputer_quadro-hwmon
+</INLINE>
+</FILE>
+
+<FILE Run="/bin/bash">
+<INLINE>
+
+download() {
+# Download acqadro package
+if wget -q -nc --show-progress --progress=bar:force:noscroll -O "&packages;/${KERNEL_V%%-*}/${LAT_PACKAGE}" "${DL_URL}/${LAT_PACKAGE}" ; then
+  wget -q -nc --show-progress --progress=bar:force:noscroll -O "&packages;/${KERNEL_V%%-*}/${LAT_PACKAGE}.md5" "${DL_URL}/${LAT_PACKAGE}.md5"
+  if [ "$(md5sum &packages;/${KERNEL_V%%-*}/${LAT_PACKAGE} | awk '{print $1}')" != "$(cat &packages;/${KERNEL_V%%-*}/${LAT_PACKAGE}.md5 | awk '{print $1}')" ]; then
+    echo
+    echo "-----ERROR - ERROR - ERROR - ERROR - ERROR - ERROR - ERROR - ERROR - ERROR------"
+    echo "--------------------------------CHECKSUM ERROR!---------------------------------"
+    rm -rf &plugin; &emhttp;
+    exit 1
+  fi
+  echo
+  echo "-----Successfully downloaded Aquacomputer Quadro package, please wait...!------"
+else
+  echo
+  echo "-----ERROR - ERROR - ERROR - ERROR - ERROR - ERROR - ERROR - ERROR - ERROR-----"
+  echo "------------------Can't download Aquacomputer Quadro package-------------------"
+  rm -rf &plugin; &emhttp;
+  exit 1
+fi
+}
+
+check() {
+if ! ls -1 &packages;/${KERNEL_V%%-*}/ | grep -q "${PACKAGE}" ; then
+  LAT_PACKAGE="$(wget -qO- https://api.github.com/repos/ich777/unraid-aquacomputer-quadro/releases/tags/${KERNEL_V} | jq -r '.assets[].name' | grep "${PACKAGE}" | grep -E -v '\.md5$' | sort -V | tail -1)"
+  echo
+  echo "-----------Downloading Aquacomputer Quadro package, please wait...!-----------"
+  echo "----------This could take some time, please don't close this window!----------"
+  download
+else
+  echo
+  echo "------------------Aquacomputer Quadro package found locally!------------------"
+fi
+}
+
+install() {
+# Install acqadro package
+/sbin/installpkg "&packages;/${KERNEL_V%%-*}/${PACKAGE}*.txz"
+depmod -a
+}
+
+activate() {
+# Modprobe acqadro module
+/sbin/modprobe aquacomputer-quadro
+}
+
+# Define Variables
+KERNEL_V="$(uname -r)"
+PACKAGE="aquacomputer_quadro"
+DL_URL="https://github.com/ich777/unraid-aquacomputer-quadro/releases/download/$KERNEL_V"
+
+if [ ! -d "&packages;/${KERNEL_V%%-*}" ]; then
+  mkdir -p "&packages;/${KERNEL_V%%-*}"
+fi
+
+#Check for old packages
+rm -rf $(ls -d &packages;/* | grep -v "${KERNEL_V%%-*}")
+
+if [ ! -f "&plugin;/&name;.png" ]; then
+  wget -q -nc --show-progress --progress=bar:force:noscroll -O "&plugin;/&name;.png" "https://raw.githubusercontent.com/ich777/docker-templates/master/ich777/images/aquacomputer.png"
+fi
+
+#Check if acqadro package is already downloaded
+check
+
+# Check if acqadro package module is already installed
+if ! modinfo aquacomputer-quadro -0 >/dev/null 2>&amp;1 ; then
+  echo
+  echo "-----------Installing Aquacomputer Quadro package, please wait...!------------"
+  install > /dev/null
+  activate
+  echo
+  echo "-----------Installation of Aquacomputer Quadro package successful-------------"
+  echo
+else
+  activate
+  echo
+  echo "------------Installation of Aquacomputer Quadro package successful------------"
+fi
+
+#Install icon
+if [ ! -f "&emhttp;/images/&name;.png" ]; then
+  if [ ! -d "&emhttp;/images" ]; then
+    mkdir -p &emhttp;/images
+  fi
+  cp &plugin;/&name;.png &emhttp;/images/
+fi
+
+</INLINE>
+</FILE>
+
+<FILE Run="/bin/bash" Method="remove">
+<INLINE>
+
+echo "----------------------------------------------"
+echo "---Uninstalling Aquacomputer Quadro package---"
+echo "----------------------------------------------"
+# Remove plugin related files
+rm -rf &emhttp; &plugin;
+echo
+echo "-------------------------------------------------------------------------"
+echo "---Aquacomputer Quadro package uninstalled, please reboot your server!---"
+echo "-------------------------------------------------------------------------"
+echo
+
+</INLINE>
+</FILE>
+</PLUGIN>
