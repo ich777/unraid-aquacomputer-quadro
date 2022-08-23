@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name      "aquacomputer-quadro-hwmon">
   <!ENTITY author    "ich777">
-  <!ENTITY version   "2022.07.26">
+  <!ENTITY version   "2022.08.23">
   <!ENTITY gitURL    "https://raw.githubusercontent.com/&author;/unraid-aquacomputer-quadro/master">
   <!ENTITY pluginURL "&gitURL;/&name;.plg">
   <!ENTITY plugin    "/boot/config/plugins/&name;">
@@ -13,6 +13,9 @@
 <PLUGIN  name="&name;" author="&author;" version="&version;" pluginURL="&pluginURL;" min="6.11.0-rc1">
 
 <CHANGES>
+
+###2022.08.23
+- Added fix for sensors.conf
 
 ###2022.07.26
 - Initial release
@@ -116,6 +119,11 @@ if [ ! -f "&emhttp;/images/&name;.png" ]; then
     mkdir -p &emhttp;/images
   fi
   cp &plugin;/&name;.png &emhttp;/images/
+fi
+
+# Fix for broken sensor readings
+if [ -f /etc/sensors.d/sensors.conf ]; then
+  sed -i '/quadro-hid/,+1d' /etc/sensors.d/sensors.conf
 fi
 
 </INLINE>
