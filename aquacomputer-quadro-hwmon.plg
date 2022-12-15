@@ -10,9 +10,12 @@
   <!ENTITY packages  "/boot/config/plugins/&name;/packages">
 ]>
 
-<PLUGIN  name="&name;" author="&author;" version="&version;" pluginURL="&pluginURL;" min="6.11.0-rc1">
+<PLUGIN  name="&name;" author="&author;" version="&version;" pluginURL="&pluginURL;" min="6.11.0-rc1" max="6.11.5">
 
 <CHANGES>
+
+###2022.12.15
+- Set max Unraid version to 6.11.5 - please use the Aquacomputer-D5-Next plugin for Unraid 6.11.5+
 
 ###2022.08.23a
 - Added fix for sensors.conf
